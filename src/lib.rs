@@ -1,8 +1,9 @@
+use crate::constants::{elevator, intake, pivot};
+use crate::subsystems::{Elevator, Intake, Pivot};
+use frcrs::input::Joystick;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
-use frcrs::input::Joystick;
-use crate::subsystems::{Elevator, Intake, Pivot};
 
 pub mod constants;
 mod subsystems;
@@ -23,7 +24,6 @@ pub struct Ferris {
 
     pub dt: Duration,
 }
-
 
 impl Default for Ferris {
     fn default() -> Self {
@@ -59,5 +59,76 @@ impl Ferris {
         if let Ok(intake) = self.intake.try_borrow() {
             intake.stop();
         }
+    }
+}
+
+#[derive(Clone)]
+pub enum Target {
+    Low,
+    Mid,
+    High,
+    Intake,
+    Stow,
+}
+
+impl Target {
+    pub fn get_target_pivot(&self) -> f64 {
+        match self {
+            Target::Stow => pivot::STOW,
+            Target::Low => pivot::SCORE,
+            Target::Mid => pivot::SCORE,
+            Target::High => pivot::SCORE,
+            Target::Intake => pivot::INTAKE,
+        }
+    }
+
+    pub fn get_target_arm(&self) -> f64 {
+        match self {
+            Target::Stow => intake::ARM_STOW,
+            Target::Low => intake::ARM_SCORE,
+            Target::Mid => intake::ARM_SCORE,
+            Target::High => intake::ARM_SCORE,
+            Target::Intake => intake::ARM_INTAKE,
+        }
+    }
+
+    pub fn get_target_elevator(&self) -> f64 {
+        match self {
+            Target::Stow => elevator::STOW,
+            Target::Low => elevator::LOW,
+            Target::Mid => elevator::MID,
+            Target::High => elevator::HIGH,
+            Target::Intake => elevator::GROUND,
+        }
+    }
+}
+
+pub fn set_target(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator, target_state: Target) {
+    intake.set_target(target_state.clone());
+    pivot.set_target(target_state.clone());
+    elevator.set_target(target_state.clone());
+}
+
+pub fn run_to_state(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator) {
+    intake.run_to_state();
+    pivot.run_to_state();
+    elevator.run_to_state();
+}
+pub fn score(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator, target_state: Target) {
+    set_target(intake, pivot, elevator, target_state.clone());
+    run_to_state(intake, pivot, elevator);
+
+    if intake.at_target() && pivot.at_target() && elevator.at_target() {
+        println!("at target");
+        intake.set_intake_speed(intake::OUTTAKE_SPEED);
+    }
+}
+
+pub fn intake(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator) {
+    set_target(intake, pivot, elevator, Target::Intake);
+    run_to_state(intake, pivot, elevator);
+    if intake.at_target() && pivot.at_target() && elevator.at_target() {
+        println!("at target");
+        intake.intake();
     }
 }

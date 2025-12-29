@@ -1,3 +1,4 @@
+use crate::Target;
 use crate::constants::{elevator, pivot, robotmap};
 use frcrs::ctre::{ControlMode, Talon};
 
@@ -5,25 +6,7 @@ pub struct Elevator {
     left: Talon,
     right: Talon,
 
-    target: ElevatorState,
-}
-#[derive(Clone)]
-pub enum ElevatorState {
-    Bottom,
-    Ground,
-    Mid,
-    High,
-}
-
-impl ElevatorState {
-    pub fn get_position(&self) -> f64 {
-        match self {
-            ElevatorState::Bottom => elevator::BOTTOM,
-            ElevatorState::Ground => elevator::GROUND,
-            ElevatorState::Mid => elevator::MID,
-            ElevatorState::High => elevator::HIGH,
-        }
-    }
+    target_state: Target,
 }
 
 impl Elevator {
@@ -37,23 +20,23 @@ impl Elevator {
         Self {
             left,
             right,
-            target: ElevatorState::Bottom,
+            target_state: Target::Stow,
         }
     }
 
-    pub fn set_state(&mut self, state: ElevatorState) {
-        self.target = state;
+    pub fn set_target(&mut self, target_state: Target) {
+        self.target_state = target_state;
     }
 
     pub fn run_to_state(&mut self) {
-        let target_pos = self.target.get_position();
+        let target_pos = self.target_state.get_target_elevator();
 
         self.left.set(ControlMode::MotionMagic, target_pos);
         self.right.follow(&self.left, true);
     }
 
     pub fn at_target(&self) -> bool {
-        let target_pos = self.target.get_position();
+        let target_pos = self.target_state.get_target_elevator();
         let error = (target_pos - self.left.get_position()).abs();
 
         error < elevator::ERROR_THRESHOLD
@@ -63,11 +46,7 @@ impl Elevator {
         self.left.get_position()
     }
 
-    pub fn get_target(&self) -> ElevatorState {
-        self.target.clone()
-    }
-
-    pub fn stop(&mut self) {
+    pub fn stop(&self) {
         self.left.stop();
         self.right.stop();
     }

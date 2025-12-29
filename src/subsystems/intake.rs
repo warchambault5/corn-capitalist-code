@@ -1,4 +1,5 @@
-use crate::constants::{intake, robotmap};
+use crate::Target;
+use crate::constants::{elevator, intake, robotmap};
 use frcrs::ctre::{ControlMode, Talon};
 use frcrs::laser_can::LaserCan;
 use std::cell::RefCell;
@@ -10,26 +11,10 @@ pub struct Intake {
     arm: Talon,
     laser_can: LaserCan,
 
-    arm_target: ArmState,
+    target_state: Target,
 
     last_trigger_time: Instant,
     debounce_duration: Duration,
-}
-
-pub enum ArmState {
-    Intake,
-    Score,
-    Stow,
-}
-
-impl ArmState {
-    pub fn get_target_deg(&self) -> f64 {
-        match self {
-            ArmState::Intake => intake::ARM_INTAKE,
-            ArmState::Score => intake::ARM_SCORE,
-            ArmState::Stow => intake::ARM_STOW,
-        }
-    }
 }
 
 impl Intake {
@@ -43,7 +28,7 @@ impl Intake {
             intake,
             arm,
             laser_can,
-            arm_target: ArmState::Stow,
+            target_state: Target::Stow,
             last_trigger_time: Instant::now(),
             debounce_duration: Duration::from_millis(intake::DEBOUNCE_DURATION as u64),
         }
@@ -65,11 +50,9 @@ impl Intake {
         false
     }
 
-    pub fn intake(intake: Rc<RefCell<Intake>>) {
-        if let Ok(mut intake) = intake.try_borrow_mut() {
-            while !intake.is_debounced() {
-                intake.set_intake_speed(intake::INTAKE_SPEED);
-            }
+    pub fn intake(&mut self) {
+        while !self.is_debounced() {
+            self.set_intake_speed(intake::INTAKE_SPEED);
         }
     }
 
@@ -77,17 +60,26 @@ impl Intake {
         self.intake.set(ControlMode::Percent, speed);
     }
 
-    pub fn set_arm_state(&mut self, arm_state: ArmState) {
-        self.arm_target = arm_state;
+    pub fn set_target(&mut self, target_state: Target) {
+        self.target_state = target_state;
     }
 
-    pub fn run_to_target_state(&self) {
-        let target_rot = self.arm_target.get_target_deg() / 360.0 * intake::GEAR_RATIO;
+    pub fn run_to_state(&mut self) {
+        let target_rot = self.target_state.get_target_arm() / 360.0 * intake::GEAR_RATIO;
 
         self.arm.set(ControlMode::MotionMagic, target_rot);
     }
+
+    pub fn at_target(&self) -> bool {
+        let target_pos = self.target_state.get_target_arm();
+        let error = (target_pos - self.arm.get_position()).abs();
+
+        error < intake::ERROR_THRESHOLD
+    }
+
     pub fn stop(&self) {
         self.intake.stop();
         self.arm.stop();
     }
 }
+

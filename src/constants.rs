@@ -27,7 +27,8 @@ pub mod pivot {
 }
 
 pub mod elevator {
-    pub const BOTTOM: f64 = 0.;
+    pub const STOW: f64 = 0.;
+    pub const LOW: f64 = 0.;
     pub const GROUND: f64 = 0.;
     pub const MID: f64 = 0.;
     pub const HIGH: f64 = 0.;
@@ -42,6 +43,8 @@ pub mod intake {
     pub const GEAR_RATIO: f64 = 0.;
 
     pub const INTAKE_SPEED: f64 = 0.;
+    pub const OUTTAKE_SPEED: f64 = 0.;
     pub const INTAKE_TRIP_DISTANCE: i32 = 10; //mm
-    pub const DEBOUNCE_DURATION: i32 = 200; //milli
+    pub const DEBOUNCE_DURATION: i32 = 200; //milli 
+    pub const ERROR_THRESHOLD: f64 = 0.5;
 }
