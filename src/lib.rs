@@ -1,6 +1,6 @@
 use crate::constants::{elevator, intake, pivot};
 use crate::subsystems::{Elevator, Intake, Pivot};
-use frcrs::input::Joystick;
+use frcrs::input::Gamepad;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
@@ -10,9 +10,7 @@ mod subsystems;
 
 #[derive(Clone)]
 pub struct Controllers {
-    pub left_drive: Joystick,
-    pub right_drive: Joystick,
-    pub operator: Joystick,
+    gamepad: Gamepad,
 }
 #[derive(Clone)]
 pub struct Ferris {
@@ -23,6 +21,7 @@ pub struct Ferris {
     pub intake: Rc<RefCell<Intake>>,
 
     pub dt: Duration,
+    pub state: Target,
 }
 
 impl Default for Ferris {
@@ -35,15 +34,14 @@ impl Ferris {
     pub fn new() -> Self {
         Ferris {
             controllers: Controllers {
-                left_drive: Joystick::new(constants::joystick_map::LEFT_DRIVE),
-                right_drive: Joystick::new(constants::joystick_map::RIGHT_DRIVE),
-                operator: Joystick::new(constants::joystick_map::OPERATOR),
+                gamepad: Gamepad::new(0),
             },
             pivot: Rc::new(RefCell::new(Pivot::new())),
             elevator: Rc::new(RefCell::new(Elevator::new())),
             intake: Rc::new(RefCell::new(Intake::new())),
 
             dt: Duration::from_millis(0),
+            state: Target::Stow,
         }
     }
 
@@ -114,22 +112,8 @@ pub fn run_to_state(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Eleva
     pivot.run_to_state();
     elevator.run_to_state();
 }
-pub fn score(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator, target_state: Target) {
-    set_target(intake, pivot, elevator, target_state.clone());
-    run_to_state(intake, pivot, elevator);
 
-    if intake.at_target() && pivot.at_target() && elevator.at_target() {
-        println!("at target");
-        intake.set_intake_speed(intake::OUTTAKE_SPEED);
-    }
-}
 
-pub fn intake(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator) {
-    set_target(intake, pivot, elevator, Target::Intake);
-    run_to_state(intake, pivot, elevator);
-    if intake.at_target() && pivot.at_target() && elevator.at_target() {
-        println!("at target");
-        intake.intake();
-        //very wise comment
-    }
+pub fn at_target(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator) -> bool {
+    intake.at_target() && pivot.at_target() && elevator.at_target()
 }

@@ -22,6 +22,7 @@ fn main() {
     let local = task::LocalSet::new();
 
     let mut ferris = Rc::new(RefCell::new(Ferris::new()));
+    let target_state = Target::Stow;
     // ferris.start_competition(runtime, local);
 
     runtime.block_on(local.run_until(async {
@@ -64,6 +65,7 @@ fn main() {
                         ferris.stop();
                     } else {
                         println!("FAILED TO GET FERRIS TO STOP");
+                        // leave commented for comp robot would like to implement abort at some point
                         // exit(1);
                     }
                     println!("Watchdog triggered: Motors stopped");
@@ -93,7 +95,7 @@ fn main() {
             if state.enabled() && state.teleop() {
                 if let Ok(mut robot) = ferris.try_borrow_mut() {
                     robot.dt = dt;
-                    //teleop(&mut robot).await;
+                    teleop(&mut robot).await;
                 }
             }
 
@@ -111,4 +113,91 @@ fn main() {
             last_loop = Instant::now();
         }
     }));
+}
+
+// https://github.com/Team-2502/frcrs/blob/master/src/input/gamepad.rs
+// LeftStickX: drive
+// LeftStickY: drive
+// RightStickX: rotate
+// RightStickY: n/a
+// LeftTrigger: intake  x
+// RightTrigger: outtake  x
+// A: n/a
+// B: low  x
+// X: mid  x
+// Y: high  x
+// DPadUp:
+// DPadDown:
+// DPadLeft:
+// DPadRight:
+// LeftBumper: set heading (would include some vison logic to see which we are scoring on and snap to heading accordingly)
+// RightBumper: set heading
+// Start: zero at stow
+// Back:
+// LeftStickButton:
+// RightStickButton:
+// may or may not implement these all
+// TODO: add all of drivetrain :)
+pub fn teleop(robot: &mut Ferris) {
+    if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
+
+    }
+
+    if let Ok(mut intake) = robot.intake.try_borrow_mut() {
+        if let Ok(mut pivot) = robot.pivot.try_borrow_mut() {
+            if let Ok(mut elevator) = robot.elevator.try_borrow_mut() {
+                //updates here
+                //drivetrain logic here
+
+                //set points
+                if gamepad.button(2) {
+                    set_target(&mut intake, &mut pivot, &mut elevator, Target::Low);
+                    run_to_state(&mut intake, &mut pivot, &mut elevator);
+                    if at_target(intake, pivot, elevator) {
+                        robot.state = Target::Low;
+                    }
+                }
+                else if gamepad.button(3) {
+                    set_target(&mut intake, &mut pivot, &mut elevator, Target::Mid);
+                    run_to_state(&mut intake, &mut pivot, &mut elevator);
+                    if at_target(intake, pivot, elevator) {
+                        robot.state = Target::Mid;
+                    }
+                }
+                else if gamepad.button(4) {
+                    set_target(&mut intake, &mut pivot, &mut elevator, Target::High);
+                    run_to_state(&mut intake, &mut pivot, &mut elevator);
+                    if at_target(intake, pivot, elevator) {
+                        robot.state = Target::High;
+                    }
+                }
+
+                //intake / outtake
+                if gamepad.left_trigger() > 0.5 {
+                    if robot.state == Target::Intake && at_target(intake, pivot, elevator) {
+                        let has_bale = intake.intake();
+                        if has_bale == true {
+                            gamepad.left_rumble(1.);
+                        } else {
+                            gamepad.left_rumble(0.);
+                        }
+                    }
+                    else {
+                        set_target(intake, pivot, elevator, Target::Intake);
+                        run_to_state(intake, pivot, elevator);
+                        if at_target(intake, pivot, elevator) {
+                            robot.state = Target::Intake;
+                        }
+                    }
+                } else {
+                    gamepad.left_rumble(0.);
+                }
+                if gamepad.right_trigger() > 0.5 {
+                    if robot.state != Target::Stow && robot.state != Target::Intake && at_target(intake, pivot, elevator) {
+                        intake.outtake();
+                    }
+                }
+            }
+        }
+    }
 }

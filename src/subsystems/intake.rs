@@ -53,7 +53,13 @@ impl Intake {
     pub fn intake(&mut self) {
         while !self.is_debounced() {
             self.set_intake_speed(intake::INTAKE_SPEED);
+            false
         }
+        true
+    }
+
+    pub fn outtake(&mut self) {
+        self.intake.set(ControlMode::Percent, intake::OUTTAKE_SPEED);
     }
 
     pub fn set_intake_speed(&self, speed: f64) {
@@ -75,6 +81,10 @@ impl Intake {
         let error = (target_pos - self.arm.get_position()).abs();
 
         error < intake::ERROR_THRESHOLD
+    }
+
+    pub fn zero(&self) {
+        self.arm.zero();
     }
 
     pub fn stop(&self) {

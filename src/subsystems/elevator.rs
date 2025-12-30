@@ -46,6 +46,11 @@ impl Elevator {
         self.left.get_position()
     }
 
+    pub fn zero(&self) {
+        self.left.zero();
+        self.right.zero();
+    }
+
     pub fn stop(&self) {
         self.left.stop();
         self.right.stop();
