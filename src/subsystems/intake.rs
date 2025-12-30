@@ -50,10 +50,10 @@ impl Intake {
         false
     }
 
-    pub fn intake(&mut self) {
+    pub fn intake(&mut self) -> bool {
         while !self.is_debounced() {
             self.set_intake_speed(intake::INTAKE_SPEED);
-            false
+            return false
         }
         true
     }

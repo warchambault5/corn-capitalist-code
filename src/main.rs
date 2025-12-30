@@ -1,6 +1,6 @@
 #![warn(non_snake_case)]
 
-use cc::Ferris;
+use cc::{at_target, run_to_state, set_target, Ferris};
 use frcrs::input::{RobotMode, RobotState};
 use frcrs::networktables::{NetworkTable, SmartDashboard};
 use frcrs::telemetry::Telemetry;
