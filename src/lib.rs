@@ -130,5 +130,6 @@ pub fn intake(intake: &mut Intake, pivot: &mut Pivot, elevator: &mut Elevator) {
     if intake.at_target() && pivot.at_target() && elevator.at_target() {
         println!("at target");
         intake.intake();
+        //very wise comment
     }
 }
