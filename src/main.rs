@@ -1,6 +1,6 @@
 #![warn(non_snake_case)]
 
-use cc::{at_target, run_to_state, set_target, Ferris};
+use cc::{at_target, run_to_state, set_target, Ferris, Target};
 use frcrs::input::{RobotMode, RobotState};
 use frcrs::networktables::{NetworkTable, SmartDashboard};
 use frcrs::telemetry::Telemetry;
@@ -95,7 +95,7 @@ fn main() {
             if state.enabled() && state.teleop() {
                 if let Ok(mut robot) = ferris.try_borrow_mut() {
                     robot.dt = dt;
-                    teleop(&mut robot).await;
+                    teleop(&mut robot);
                 }
             }
 
@@ -139,61 +139,58 @@ fn main() {
 // may or may not implement these all
 // TODO: add all of drivetrain :)
 pub fn teleop(robot: &mut Ferris) {
-    if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
-
-    }
-
     if let Ok(mut intake) = robot.intake.try_borrow_mut() {
         if let Ok(mut pivot) = robot.pivot.try_borrow_mut() {
             if let Ok(mut elevator) = robot.elevator.try_borrow_mut() {
-                //updates here
-                //drivetrain logic here
+                // updates here
+                // drivetrain logic here
 
-                //set points
-                if gamepad.button(2) {
+                // set points
+                // LOW
+                if robot.controllers.gamepad.b() {
                     set_target(&mut intake, &mut pivot, &mut elevator, Target::Low);
                     run_to_state(&mut intake, &mut pivot, &mut elevator);
-                    if at_target(intake, pivot, elevator) {
+                    if at_target(&mut intake, &mut pivot, &mut elevator) {
                         robot.state = Target::Low;
                     }
-                }
-                else if gamepad.button(3) {
+                } // MID
+                else if robot.controllers.gamepad.x() {
                     set_target(&mut intake, &mut pivot, &mut elevator, Target::Mid);
                     run_to_state(&mut intake, &mut pivot, &mut elevator);
-                    if at_target(intake, pivot, elevator) {
+                    if at_target(&mut intake, &mut pivot, &mut elevator) {
                         robot.state = Target::Mid;
                     }
-                }
-                else if gamepad.button(4) {
+                } //HIGH
+                else if robot.controllers.gamepad.y() {
                     set_target(&mut intake, &mut pivot, &mut elevator, Target::High);
                     run_to_state(&mut intake, &mut pivot, &mut elevator);
-                    if at_target(intake, pivot, elevator) {
+                    if at_target(&mut intake, &mut pivot, &mut elevator) {
                         robot.state = Target::High;
                     }
                 }
 
                 //intake / outtake
-                if gamepad.left_trigger() > 0.5 {
-                    if robot.state == Target::Intake && at_target(intake, pivot, elevator) {
+                if robot.controllers.gamepad.left_trigger() > 0.5 {
+                    if robot.state == Target::Intake && at_target(&mut intake, &mut pivot, &mut elevator) {
                         let has_bale = intake.intake();
                         if has_bale == true {
-                            gamepad.left_rumble(1.);
+                            robot.controllers.gamepad.rumble_left(1.);
                         } else {
-                            gamepad.left_rumble(0.);
+                            robot.controllers.gamepad.rumble_left(0.);
                         }
                     }
                     else {
-                        set_target(intake, pivot, elevator, Target::Intake);
-                        run_to_state(intake, pivot, elevator);
-                        if at_target(intake, pivot, elevator) {
+                        set_target(&mut intake, &mut pivot, &mut elevator, Target::Intake);
+                        run_to_state(&mut intake, &mut pivot, &mut elevator);
+                        if at_target(&mut intake, &mut pivot, &mut elevator) {
                             robot.state = Target::Intake;
                         }
                     }
                 } else {
-                    gamepad.left_rumble(0.);
+                    robot.controllers.gamepad.rumble_left(0.);
                 }
-                if gamepad.right_trigger() > 0.5 {
-                    if robot.state != Target::Stow && robot.state != Target::Intake && at_target(intake, pivot, elevator) {
+                if robot.controllers.gamepad.right_trigger() > 0.5 {
+                    if robot.state != Target::Stow && robot.state != Target::Intake && at_target(&mut intake, &mut pivot, &mut elevator) {
                         intake.outtake();
                     }
                 }

@@ -10,7 +10,7 @@ mod subsystems;
 
 #[derive(Clone)]
 pub struct Controllers {
-    gamepad: Gamepad,
+    pub gamepad: Gamepad,
 }
 #[derive(Clone)]
 pub struct Ferris {
@@ -60,7 +60,7 @@ impl Ferris {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Target {
     Low,
     Mid,
